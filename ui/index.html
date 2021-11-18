@@ -19,6 +19,7 @@
   <body>
     <h1>Results</h1>
     <p> I am in room: <label id="room-lbl"> </label></p>
+    <p> I am id_user: <label id="id-user-lbl"> </label></p>
     <p> I am socket: <label id="socket-lbl"> </label></p>
     <p> I am connected to node: <label id="proc-lbl"> </label></p>
 
@@ -30,17 +31,21 @@
   <script>
     'use strict'
 
+    const params = Object.fromEntries((new URLSearchParams(window.location.search)).entries())
     const container = document.querySelector('#event-container')
+
+    const id_user = params.id_user || 'bar'
     const room = window.location.pathname.split('/')[1].trim()
     const socket = io('http://localhost:5009', {
       reconnection: true,
       reconnectionAttempts: 5,
       transports: ['websocket'],
-      query: `room=${room}&id_user=foo`
+      query: `room=${room}&id_user=${id_user}`
     })
 
     socket.on('connect', e => {
-      document.title = `Room: ${room}`
+      document.title = `room: ${room}, id_user: ${id_user}`
+      document.querySelector('#id-user-lbl').innerHTML = id_user
       document.querySelector('#room-lbl').innerHTML = room
       document.querySelector('#socket-lbl').innerHTML = socket.id
     })

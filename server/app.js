@@ -36,12 +36,48 @@ io.adapter(redis)
 io.set('transports', ['websocket'])
 app.set('port', (process.env.PORT || 5009))
 
-io.on('connection', function(socket) {
+const getIdUserFromSocketId = id_socket => new Promise((resolve, reject) => {
+  io.of('/').adapter.customRequest(id_socket, (err, replies) => {
+    if (err)
+      return reject(err)
+
+    resolve(replies.find(el => !!el))
+  })
+})
+
+app.get('/:room/users', async (req, res) => {
+  io.of('/').adapter.clients([req.params.room], async (err, clients) => {
+    if (err) {
+      return res.status(500).send(err)
+    }
+
+    const users = []
+
+    for (let id_socket of clients) {
+      users.push({
+        id_socket,
+        id_user: await getIdUserFromSocketId(id_socket)
+      })
+    }
+
+    res.json(users)
+  })
+})
+
+io.of('/').adapter.customHook = (id_socket, cb) => {
+  const socket = io.sockets.sockets[id_socket]
+
+  cb(socket ? socket.data.id_user : null)
+}
+
+io.on('connection', socket => {
   console.log('Node:', procid, 'Socket:', socket.id, 'connection')
 
+  const id_user = socket.handshake.query.id_user
   const room = socket.handshake.query.room
 
   socket.join(room)
+  socket.data = { id_user }
 
   socket.on('paper-event', event => {
     console.log('Node:', procid, 'Socket:', socket.id, 'sent an event')
@@ -51,7 +87,7 @@ io.on('connection', function(socket) {
     })
   })
 
-  socket.on('disconnect', function() {
+  socket.on('disconnect', () => {
     console.log('Node:', procid, 'Socket:', socket.id, 'disconnection')
   })
 
