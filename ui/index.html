@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>socket-identity-playground UI</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js" integrity="sha512-7IDZ+mHVoc7nSziUi72L5rGojJDtveVWHOjb+Eu8QSnguy5FitNnFyEoLoL3v1u18DNm4E30elDfkhZvVADw6Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+      * {
+        font-family: sans-serif;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Results in the console</h1>
+  </body>
+
+  <script>
+    'use strict'
+
+    const socket = io('http://localhost:5009', {
+      reconnection: true,
+      reconnectionAttempts: 5,
+      transports: ['websocket'],
+      query: `id_user=foo`
+    })
+
+  </script>
+</html>

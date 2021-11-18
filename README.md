@@ -12,7 +12,11 @@ $ npm install
 Ensure a REDIS instance is running on `redis://127.0.0.1:6379`, then:
 
 ```bash
+# Run socket.io server
 $ npm run start-dev
+
+# Run UI server
+$ npm run start-ui-dev
 ```
 
 ## Authors

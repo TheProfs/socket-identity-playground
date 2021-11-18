@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server/app.js",
     "start-dev": "NODE_ENV=development node server/app.js",
+    "start-ui-dev": "NODE_ENV=development node ui/app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
