@@ -20,7 +20,7 @@ const httpsServer = https.createServer({
 
 app.set('port', (process.env.PORT || 5010))
 
-app.get('/', (req, res) => {
+app.get('/:room', (req, res) => {
   res.sendFile(path.resolve(__dirname, './index.html'))
 })
 

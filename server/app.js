@@ -1,5 +1,7 @@
 'use strict'
 
+const procid = require('shortid')()
+
 if (!process.env.NODE_ENV) throw 'NODE_ENV is undefined.'
 console.log(`NODE_ENV is set to: ${process.env.NODE_ENV}`)
 const shouldUseSSL = process.env.NODE_ENV === 'development'
@@ -35,11 +37,25 @@ io.set('transports', ['websocket'])
 app.set('port', (process.env.PORT || 5009))
 
 io.on('connection', function(socket) {
-  console.log('socket connected')
+  console.log('Node:', procid, 'Socket:', socket.id, 'connection')
+
+  const room = socket.handshake.query.room
+
+  socket.join(room)
+
+  socket.on('paper-event', event => {
+    console.log('Node:', procid, 'Socket:', socket.id, 'sent an event')
+    socket.to(room).broadcast.emit('paper-event', {
+      procid,
+      ...event
+    })
+  })
 
   socket.on('disconnect', function() {
-    console.log('socket disconnected')
+    console.log('Node:', procid, 'Socket:', socket.id, 'disconnection')
   })
+
+  socket.emit('handshake', { procid })
 })
 
 const serverInstance = shouldUseSSL ? httpsServer : httpServer

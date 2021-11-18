@@ -19,6 +19,19 @@ $ npm run start-dev
 $ npm run start-ui-dev
 ```
 
+## Useful PM2 commands
+
+```bash
+# Run socket.io server as a 4 node cluster
+NODE_ENV=development pm2 start server/app.js -i 4
+
+# Stream logs from nodes
+pm2 logs --merge-logs
+
+# Stop the cluster
+pm2 stop all && pm2 delete all  
+```
+
 ## Authors
 
 The Profs

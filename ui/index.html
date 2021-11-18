@@ -6,23 +6,62 @@
     <style>
       * {
         font-family: sans-serif;
+        color: #444;
+      }
+
+      label {
+        font-weight: bold;
+        color: #222;
       }
     </style>
   </head>
 
   <body>
-    <h1>Results in the console</h1>
+    <h1>Results</h1>
+    <p> I am in room: <label id="room-lbl"> </label></p>
+    <p> I am socket: <label id="socket-lbl"> </label></p>
+    <p> I am connected to node: <label id="proc-lbl"> </label></p>
+
+    <h2> Received events </h2>
+    <hr>
+    <ul id="event-container"></ul>
   </body>
 
   <script>
     'use strict'
 
+    const container = document.querySelector('#event-container')
+    const room = window.location.pathname.split('/')[1].trim()
     const socket = io('http://localhost:5009', {
       reconnection: true,
       reconnectionAttempts: 5,
       transports: ['websocket'],
-      query: `id_user=foo`
+      query: `room=${room}&id_user=foo`
     })
 
+    socket.on('connect', e => {
+      document.title = `Room: ${room}`
+      document.querySelector('#room-lbl').innerHTML = room
+      document.querySelector('#socket-lbl').innerHTML = socket.id
+    })
+
+    socket.on('handshake', e => {
+      document.querySelector('#proc-lbl').innerHTML = e.procid
+    })
+
+    socket.on('paper-event', e => {
+      console.log('received event')
+
+      const li = document.createElement('li')
+
+      li.appendChild(document.createTextNode(JSON.stringify(e)))
+
+      container.appendChild(li)
+    })
+
+    setInterval(() => {
+      console.log('emitted event')
+      socket.emit('paper-event', { socket: socket.id, data: 'foo' })
+    }, 2500)
   </script>
 </html>
