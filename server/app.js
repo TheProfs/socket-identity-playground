@@ -11,7 +11,9 @@ const fs = require('fs')
 const http = require('http')
 const https = require('https')
 const express = require('express')
+const db = require('knex')(require('../knexfile.js').development)
 const cors = require('cors')
+const bodyParser = require('body-parser')
 const socketIO = require('socket.io')
 const redis = require('./redis')
 
@@ -26,6 +28,7 @@ const io = socketIO(shouldUseSSL ? httpsServer : httpServer, {
   pingTimeout: 30000
 })
 
+app.use(bodyParser.json({ limit: '1mb' }))
 app.use(cors({
   credentials: true,
   origin: [
@@ -37,6 +40,46 @@ io.adapter(redis)
 io.set('transports', ['websocket'])
 app.set('port', (process.env.PORT || 5009))
 
+// User Routes
+
+app.get('/users', async (req, res) => {
+  const users = await db('user').select('*')
+
+  res.json(users)
+})
+
+app.get('/users/:id_user', async (req, res) => {
+  const user = await db('user').first('*').where({
+    id_user: req.params.id_user
+  })
+
+  if (!user)
+    return res.status(404).send('Cannot find user with such id')
+
+  res.json(user)
+})
+
+app.put('/users/:id_user', async (req, res) => {
+  await db('user').update(req.body).where({
+    id_user: req.params.id_user
+  })
+
+  res.sendStatus(204)
+})
+
+// UI serving route
+
+app.get('/ui/:room', async (req, res) => {
+  try {
+    res.sendFile(path.resolve(__dirname, '../ui/index.html'))
+  } catch (err) {
+    console.error(err)
+    res.sendStatus(500)
+  }
+})
+
+// Route: Get users in socket.io room
+
 const getIdUserFromSocketId = id_socket => new Promise((resolve, reject) => {
   io.of('/').adapter.customRequest(id_socket, (err, replies) => {
     if (err)
@@ -44,15 +87,6 @@ const getIdUserFromSocketId = id_socket => new Promise((resolve, reject) => {
 
     resolve(replies.find(el => !!el))
   })
-})
-
-app.get('/:room', async (req, res) => {
-  try {
-    res.sendFile(path.resolve(__dirname, '../ui/index.html'))
-  } catch (err) {
-    console.error(err)
-    res.sendStatus(500)
-  }
 })
 
 app.get('/:room/users', async (req, res) => {
@@ -63,25 +97,27 @@ app.get('/:room/users', async (req, res) => {
       return res.status(500).send(err)
     }
 
-    const users = []
+    const result = []
 
     for (let id_socket of clients) {
-      users.push({
-        name: 'John Doe',
-        id_socket,
-        id_user: await getIdUserFromSocketId(id_socket)
-      })
+      const id_user = await getIdUserFromSocketId(id_socket)
+
+      result.push({ id_user, id_socket, data: {} })
     }
 
-    res.json(users)
+    res.json(result)
   })
 })
+
+// socket.io node hook
 
 io.of('/').adapter.customHook = (id_socket, cb) => {
   const socket = io.sockets.sockets[id_socket]
 
   cb(socket ? socket.data.id_user : null)
 }
+
+// socket.io setup
 
 io.on('connection', socket => {
   console.log('Node:', procid, 'Socket:', socket.id, 'connection')
@@ -91,6 +127,10 @@ io.on('connection', socket => {
 
   socket.join(room)
   socket.data = { id_user }
+
+  socket.on('identity-change', event => {
+    socket.to(room).broadcast.emit('identity-change', event)
+  })
 
   socket.on('disconnect', () => {
     console.log('Node:', procid, 'Socket:', socket.id, 'disconnection')

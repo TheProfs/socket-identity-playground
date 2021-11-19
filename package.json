@@ -4,8 +4,9 @@
   "description": "socket.io identity playground",
   "main": "server/app.js",
   "scripts": {
+    "reset-db": "knex migrate:latest --env development && knex seed:run --env development",
     "start-dev": "NODE_ENV=development pm2 start server/app.js -i 4",
-    "stop-dev": "pm2 delete all",
+    "stop-dev": "pm2 kill",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -24,12 +25,15 @@
   },
   "homepage": "https://github.com/TheProfs/socket-identity-playground#readme",
   "dependencies": {
+    "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "https": "^1.0.0",
+    "knex": "^0.95.14",
     "shortid": "^2.2.16",
     "socket.io": "^2.3.0",
-    "socket.io-redis": "^5.4.0"
+    "socket.io-redis": "^5.4.0",
+    "sqlite3": "^5.0.2"
   },
   "devDependencies": {
     "axios": "^0.24.0"

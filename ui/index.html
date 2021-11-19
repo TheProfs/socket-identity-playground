@@ -45,28 +45,71 @@
         background-color: #04AA6D;
         color: white;
       }
+
+      .error-lbl {
+        color: red;
+      }
     </style>
 
     <iron-ajax
-      id="getUsersXHR"
+      id="getMyUserXHR"
       method="GET"
-      url="https://localhost:5009/[[room]]/users"
-      last-response="{{userList}}">
+      url="/users/[[idUser]]"
+      last-response="{{myUser}}"
+      loading="{{loading}}"
+      last-error="{{lastError}}">
+    </iron-ajax>
+
+    <iron-ajax
+      id="putMyUserXHR"
+      method="PUT"
+      url="/users/[[idUser]]"
+      loading="{{loading}}"
+      last-error="{{lastError}}"
+      content-type="application/json">
+    </iron-ajax>
+
+    <iron-ajax
+      id="getUserXHR"
+      method="GET"
+      loading="{{loading}}"
+      last-error="{{lastError}}">
+    </iron-ajax>
+
+    <iron-ajax
+      id="getRoomUsersXHR"
+      method="GET"
+      url="/[[room]]/users"
+      last-response="{{users}}"
+      loading="{{loading}}"
+      last-error="{{lastError}}">
     </iron-ajax>
 
     <h2> Room: [[room]] </h2>
     <h3> My info </h3>
 
+    <p class="error-lbl" hidden$="[[!lastError]]">
+      [[lastError.error.message]]
+    </p>
+
     <table>
       <tr>
         <th>User ID</th>
-        <th>Server node ID</th>
+        <th>Name</th>
         <th>Socket ID</th>
+        <th>Server node ID</th>
       </tr>
       <tr>
         <td>[[idUser]]</td>
-        <td>[[procId]]</td>
+        <td>
+          <paper-input
+            label="Name"
+            value="{{myUser.name::input}}"
+            on-input="_saveChange">
+          </paper-input>
+        </td>
         <td>[[idSocket]]</td>
+        <td>[[procId]]</td>
       </tr>
     </table>
 
@@ -76,12 +119,14 @@
       <tr>
         <th>User ID</th>
         <th>Socket ID</th>
+        <th>Name</th>
       </tr>
 
-      <template is="dom-repeat" items="[[userList]]">
+      <template is="dom-repeat" items="[[users]]">
         <tr>
           <td>[[item.id_user]]</td>
           <td>[[item.id_socket]]</td>
+          <td>[[item.data.name]]</td>
         </tr>
       </template>
     </table>
@@ -95,10 +140,17 @@
         is: 'identity-playground',
 
         properties: {
-          userList: {
+          users: {
             type: Array,
             value: function() {
               return []
+            }
+          },
+
+          myUser: {
+            type: Object,
+            value: function() {
+              return {}
             }
           },
 
@@ -114,9 +166,7 @@
           room: {
             type: String,
             value: function() {
-              const params = Object.fromEntries((new URLSearchParams(window.location.search)).entries())
-
-              return window.location.pathname.split('/')[1].trim()
+              return window.location.pathname.split('/')[2].trim()
             }
           },
 
@@ -130,49 +180,93 @@
             value: null
           },
 
-          events: {
-            type: Array,
-            value: function() {
-              return []
-            }
+          lastError: {
+            type: Boolean,
+            value: false
+          },
+
+          loading: {
+            type: Boolean,
+            value: false
           }
         },
 
         attached: function() {
           window.identityPlayground = this
 
-          const socket = io('http://localhost:5009', {
+          this.$.getMyUserXHR.generateRequest()
+
+          this.socket = io('', {
             reconnection: true,
             reconnectionAttempts: 5,
             transports: ['websocket'],
             query: `room=${this.room}&id_user=${this.idUser}`
           })
 
-          socket.on('connect', e => {
+          this.socket.on('connect', e => {
             document.title = `room: ${this.room}, id_user: ${this.idUser}`
-            this.set('idSocket', socket.id)
+            this.set('idSocket', this.socket.id)
           })
 
-          socket.on('handshake', e => {
+          this.socket.on('handshake', e => {
             this.set('procId', e.procid)
-            this._updateUserList()
+            this._updateUsers()
           })
 
-          socket.on('socket-connected', this._updateUserList.bind(this))
-          socket.on('socket-disconnected', this._updateUserList.bind(this))
-
-          socket.on('paper-event', e => {
-            this.push('events', e)
+          this.socket.on('socket-connected', () => {
+            this._updateUsers()
           })
 
-          setInterval(() => {
-            console.log('emitted event')
-            socket.emit('paper-event', { socket: socket.id, data: 'foo' })
-          }, 2500)
+          this.socket.on('socket-disconnected', () => {
+            this._updateUsers()
+          })
+
+          this.socket.on('identity-change', e => {
+            this._updateUser(e.id_user)
+          })
         },
 
-        _updateUserList: function() {
-          return this.$.getUsersXHR.generateRequest()
+        _saveChange: function() {
+          this.debounce('_saveChange', () => {
+            this.$.putMyUserXHR.body = { name: this.myUser.name }
+            this.$.putMyUserXHR.generateRequest().completes
+              .then(() => {
+                this._updateUser(this.idUser)
+                this.socket.emit('identity-change', { id_user: this.idUser })
+              })
+          }, 250)
+        },
+
+        _updateUsers: async function() {
+          const result = await this.$.getRoomUsersXHR
+            .generateRequest()
+            .completes
+
+          this.set('users', result.response)
+
+          for (const user of this.users) {
+            await this._updateUser(user.id_user)
+          }
+        },
+
+        _updateUser: async function(idUser) {
+          this.$.getUserXHR.url = `/users/${idUser}`
+
+          const result = await this.$.getUserXHR.generateRequest().completes
+          const indices = this.users.reduce((indices, user, i) => {
+            if (user.id_user === idUser) {
+              indices.push(i)
+            }
+
+            return indices
+          }, [])
+
+          indices.forEach(i => {
+            if (i < 0)
+              return console.warn('Cannot find user to update')
+
+            this.set(`users.${i}.data`, result.response)
+          })
         }
       })
     })

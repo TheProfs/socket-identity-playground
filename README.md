@@ -19,36 +19,44 @@ $ npm install pm2@latest -g
 Ensure a [Redis][redis] instance is running on `redis://127.0.0.1:6379`, then:
 
 ```bash
-# Run socket.io server as a 4 node cluster using PM2:
-$ npm run start-dev
+# Migrate & seed SQLite3 DB:
+$ npm run reset-db
 
-# .. and to stream logs:
-$ pm2 logs --merge-logs
+# Run socket.io server as a 4 node cluster using PM2 and stream logs:
+$ npm run stop-dev && npm run start-dev && pm2 logs --merge-logs
 
 # Stop socket.io server (kill all nodes):
 $ npm run stop-dev
+
+# Reset database and restart cluster:
+$ npm run reset-db && npm run stop-dev && npm run start-dev && pm2 logs --merge-logs
 ```
 
 then visit:
 
-https://localhost:5009/Maths?id_user=foo which will create a socket.io client
-with `id_user: 'foo'` and join room `"Maths"` for example.
+https://localhost:5009/ui/Maths?id_user=1
 
-## API Endpoints
+which will create a socket.io client as `id_user: '1'` and join room `"Maths"`
+for example.
 
-Fetch a user list of users in room `"Maths"`
+### Available users
 
-`GET`: `https://localhost:5009/Maths/users`
+You *must* use one of the following `id_user` when connecting:
 
-Example response:
+| id_user | name      |
+|---------|-----------|
+| 1       | John      |
+| 2       | Mary      |
+| 3       | Mike      |
+| 4       | Frank     |
+| 5       | Stephanie |
+| 6       | Richard   |
+| 7       | Sonia     |
+| 8       | Charlie   |
+| 9       | Rowan     |
+| 10      | Victoria  |
 
-```js
-[
-  { id_socket: 'aCfIOY5n5eEKQlOxAAAA', id_user: 'foo' },
-  { id_socket: 'eKGcrPYDdHBEkdueAAAA', id_user: 'bar' }
-]
-```
-
+You can join any room you want.
 
 ## How it works
 
@@ -73,7 +81,22 @@ When pinged:
     If yes, the **other node** response with the `socket.id_user` of the
     found `socket`.
 - The **request node** responds to the `GET` request with a user list,
-  each user containing a `id_socket` and an `id_user`
+  each user containing a `id_socket` and an `id_user` like so:
+
+```js
+  // Room "Maths":
+  [
+    { id_socket: '70tSKzb9gzWwfL', id_user: 'foo' },
+    { id_socket: '62sGlHCfUDdmAA', id_user: 'bar' }
+  ]
+```
+
+- The client is then responsible for hydrating the `id_user`s with the full
+  user objects.
+- When a client updates his identity info, he then broadcasts an
+  `identity-change` event.
+- Each participant in the room then rehydrates the user object for the `id_user`  
+  that emitted the `identity-change`.
 
 ### Notes:
 
