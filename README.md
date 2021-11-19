@@ -20,7 +20,7 @@ Ensure a [Redis][redis] instance is running on `redis://127.0.0.1:6379`, then:
 
 ```bash
 # Migrate & seed SQLite3 DB:
-$ npm run reset-db
+$ npm run reset-db-dev
 
 # Run socket.io server as a 4 node cluster using PM2 and stream logs:
 $ npm run stop-dev && npm run start-dev && pm2 logs --merge-logs
@@ -29,7 +29,7 @@ $ npm run stop-dev && npm run start-dev && pm2 logs --merge-logs
 $ npm run stop-dev
 
 # Reset database and restart cluster:
-$ npm run reset-db && npm run stop-dev && npm run start-dev && pm2 logs --merge-logs
+$ npm run reset-db-dev && npm run stop-dev && npm run start-dev && pm2 logs --merge-logs
 ```
 
 then visit:
@@ -39,9 +39,22 @@ https://localhost:5009/ui/Maths?id_user=1
 which will create a socket.io client as `id_user: '1'` and join room `"Maths"`
 for example.
 
+## Run on Heroku
+
+This service is also running on [Heroku][heroku], available at: https://socket-identity-playground.herokuapp.com/
+
+Pushing to `main` branch triggers a Heroku build.
+
+### Heroku scripts
+
+```bash
+# Migrate/seed Heroku DB
+$ heroku run npm run reset-db-staging -a socket-identity-playground
+```
+
 ### Available users
 
-You *must* use one of the following `id_user` when connecting:
+You *must* use one of the following `id_user` when visiting a room:
 
 | id_user | name      |
 |---------|-----------|
@@ -116,3 +129,4 @@ The MIT License
 [socket.io-multiple-nodes]: https://socket.io/docs/v3/using-multiple-nodes/
 [redis]: https://redis.io/
 [socketio-custom-request]: https://github.com/socketio/socket.io-redis-adapter/tree/01028d03dbdc9cc05c940a2ac6bc367119165c16#redisadaptercustomrequestdataobject-fnfunction
+[heroku]: https://heroku.com

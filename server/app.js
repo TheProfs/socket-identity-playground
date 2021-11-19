@@ -11,11 +11,13 @@ const fs = require('fs')
 const http = require('http')
 const https = require('https')
 const express = require('express')
-const db = require('knex')(require('../knexfile.js').development)
+const db = require('knex')(require('../knexfile.js')[process.env.NODE_ENV])
 const cors = require('cors')
 const bodyParser = require('body-parser')
 const socketIO = require('socket.io')
 const redis = require('./redis')
+
+// General Setups
 
 const app = express()
 const httpServer = http.createServer(app)
@@ -39,6 +41,21 @@ app.use(cors({
 io.adapter(redis)
 io.set('transports', ['websocket'])
 app.set('port', (process.env.PORT || 5009))
+
+// UI serving routes
+
+app.get('/ui/:room', async (req, res) => {
+  try {
+    res.sendFile(path.resolve(__dirname, '../ui/index.html'))
+  } catch (err) {
+    console.error(err)
+    res.sendStatus(500)
+  }
+})
+
+app.get('/', async (req, res) => {
+  res.redirect(`/ui/foo?id_user=${Math.round(Math.random() * 10)}`)
+})
 
 // User Routes
 
@@ -65,17 +82,6 @@ app.put('/users/:id_user', async (req, res) => {
   })
 
   res.sendStatus(204)
-})
-
-// UI serving route
-
-app.get('/ui/:room', async (req, res) => {
-  try {
-    res.sendFile(path.resolve(__dirname, '../ui/index.html'))
-  } catch (err) {
-    console.error(err)
-    res.sendStatus(500)
-  }
 })
 
 // Route: Get users in socket.io room
