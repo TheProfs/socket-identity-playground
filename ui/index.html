@@ -1,72 +1,181 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
+    <meta charset="utf-8">
     <title>socket-identity-playground UI</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js" integrity="sha512-7IDZ+mHVoc7nSziUi72L5rGojJDtveVWHOjb+Eu8QSnguy5FitNnFyEoLoL3v1u18DNm4E30elDfkhZvVADw6Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/webcomponentsjs/0.7.0/webcomponents-lite.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js"></script>
+    <link rel="import" href="https://cdn.rawgit.com/download/polymer-cdn/1.4.0/lib/iron-ajax/iron-ajax.html">
+    <link rel="import" href="https://cdn.rawgit.com/download/polymer-cdn/1.4.0/lib/paper-input/paper-input.html">
+
     <style>
-      * {
+      html,
+      body {
         font-family: sans-serif;
         color: #444;
-      }
-
-      label {
-        font-weight: bold;
-        color: #222;
+        background: #fafafa;
       }
     </style>
   </head>
 
   <body>
-    <h1>Results</h1>
-    <p> I am in room: <label id="room-lbl"> </label></p>
-    <p> I am id_user: <label id="id-user-lbl"> </label></p>
-    <p> I am socket: <label id="socket-lbl"> </label></p>
-    <p> I am connected to node: <label id="proc-lbl"> </label></p>
-
-    <h2> Received events </h2>
-    <hr>
-    <ul id="event-container"></ul>
+    <template is="dom-bind">
+      <identity-playground></identity-playground>
+    </template>
   </body>
+</html>
+
+<dom-module id="identity-playground">
+  <template>
+    <style>
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+
+      td, th {
+        border: 1px solid #ddd;
+        padding: 8px;
+      }
+
+      th {
+        padding-top: 12px;
+        padding-bottom: 12px;
+        text-align: left;
+        background-color: #04AA6D;
+        color: white;
+      }
+    </style>
+
+    <iron-ajax
+      id="getUsersXHR"
+      method="GET"
+      url="https://localhost:5009/[[room]]/users"
+      last-response="{{userList}}">
+    </iron-ajax>
+
+    <h2> My info </h2>
+
+    <table>
+      <tr>
+        <th>Room</th>
+        <th>User ID</th>
+        <th>Server node ID</th>
+        <th>Socket ID</th>
+      </tr>
+      <tr>
+        <td>[[room]]</td>
+        <td>[[idUser]]</td>
+        <td>[[procId]]</td>
+        <td>[[idSocket]]</td>
+      </tr>
+    </table>
+
+    <h3> Room user list </h3>
+
+    <table>
+      <tr>
+        <th>User ID</th>
+        <th>Socket ID</th>
+      </tr>
+
+      <template is="dom-repeat" items="[[userList]]">
+        <tr>
+          <td>[[item.id_user]]</td>
+          <td>[[item.id_socket]]</td>
+        </tr>
+      </template>
+    </table>
+  </template>
 
   <script>
     'use strict'
 
-    const params = Object.fromEntries((new URLSearchParams(window.location.search)).entries())
-    const container = document.querySelector('#event-container')
+    window.addEventListener('WebComponentsReady', () => {
+      Polymer({
+        is: 'identity-playground',
 
-    const id_user = params.id_user || 'bar'
-    const room = window.location.pathname.split('/')[1].trim()
-    const socket = io('http://localhost:5009', {
-      reconnection: true,
-      reconnectionAttempts: 5,
-      transports: ['websocket'],
-      query: `room=${room}&id_user=${id_user}`
+        properties: {
+          userList: {
+            type: Array,
+            value: function() {
+              return []
+            }
+          },
+
+          idUser: {
+            type: String,
+            value: function() {
+              const params = Object.fromEntries((new URLSearchParams(window.location.search)).entries())
+
+              return params.id_user || 'bar'
+            }
+          },
+
+          room: {
+            type: String,
+            value: function() {
+              const params = Object.fromEntries((new URLSearchParams(window.location.search)).entries())
+
+              return window.location.pathname.split('/')[1].trim()
+            }
+          },
+
+          idSocket: {
+            type: String,
+            value: null
+          },
+
+          procId: {
+            type: String,
+            value: null
+          },
+
+          events: {
+            type: Array,
+            value: function() {
+              return []
+            }
+          }
+        },
+
+        attached: function() {
+          window.identityPlayground = this
+
+          const socket = io('http://localhost:5009', {
+            reconnection: true,
+            reconnectionAttempts: 5,
+            transports: ['websocket'],
+            query: `room=${this.room}&id_user=${this.idUser}`
+          })
+
+          socket.on('connect', e => {
+            document.title = `room: ${this.room}, id_user: ${this.idUser}`
+            this.set('idSocket', socket.id)
+          })
+
+          socket.on('handshake', e => {
+            this.set('procId', e.procid)
+            this._updateUserList()
+          })
+
+          socket.on('socket-connected', this._updateUserList.bind(this))
+          socket.on('socket-disconnected', this._updateUserList.bind(this))
+
+          socket.on('paper-event', e => {
+            this.push('events', e)
+          })
+
+          setInterval(() => {
+            console.log('emitted event')
+            socket.emit('paper-event', { socket: socket.id, data: 'foo' })
+          }, 2500)
+        },
+
+        _updateUserList: function() {
+          return this.$.getUsersXHR.generateRequest()
+        }
+      })
     })
-
-    socket.on('connect', e => {
-      document.title = `room: ${room}, id_user: ${id_user}`
-      document.querySelector('#id-user-lbl').innerHTML = id_user
-      document.querySelector('#room-lbl').innerHTML = room
-      document.querySelector('#socket-lbl').innerHTML = socket.id
-    })
-
-    socket.on('handshake', e => {
-      document.querySelector('#proc-lbl').innerHTML = e.procid
-    })
-
-    socket.on('paper-event', e => {
-      console.log('received event')
-
-      const li = document.createElement('li')
-
-      li.appendChild(document.createTextNode(JSON.stringify(e)))
-
-      container.appendChild(li)
-    })
-
-    setInterval(() => {
-      console.log('emitted event')
-      socket.emit('paper-event', { socket: socket.id, data: 'foo' })
-    }, 2500)
   </script>
-</html>
+</dom-module>

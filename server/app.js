@@ -6,6 +6,7 @@ if (!process.env.NODE_ENV) throw 'NODE_ENV is undefined.'
 console.log(`NODE_ENV is set to: ${process.env.NODE_ENV}`)
 const shouldUseSSL = process.env.NODE_ENV === 'development'
 
+const path = require('path')
 const fs = require('fs')
 const http = require('http')
 const https = require('https')
@@ -28,7 +29,7 @@ const io = socketIO(shouldUseSSL ? httpsServer : httpServer, {
 app.use(cors({
   credentials: true,
   origin: [
-    'https://localhost:5001'
+    'https://localhost:5010'
   ]
 }))
 
@@ -45,9 +46,20 @@ const getIdUserFromSocketId = id_socket => new Promise((resolve, reject) => {
   })
 })
 
+app.get('/:room', async (req, res) => {
+  try {
+    res.sendFile(path.resolve(__dirname, '../ui/index.html'))
+  } catch (err) {
+    console.error(err)
+    res.sendStatus(500)
+  }
+})
+
 app.get('/:room/users', async (req, res) => {
   io.of('/').adapter.clients([req.params.room], async (err, clients) => {
     if (err) {
+      console.error(err)
+
       return res.status(500).send(err)
     }
 
@@ -55,6 +67,7 @@ app.get('/:room/users', async (req, res) => {
 
     for (let id_socket of clients) {
       users.push({
+        name: 'John Doe',
         id_socket,
         id_user: await getIdUserFromSocketId(id_socket)
       })
@@ -79,19 +92,13 @@ io.on('connection', socket => {
   socket.join(room)
   socket.data = { id_user }
 
-  socket.on('paper-event', event => {
-    console.log('Node:', procid, 'Socket:', socket.id, 'sent an event')
-    socket.to(room).broadcast.emit('paper-event', {
-      procid,
-      ...event
-    })
-  })
-
   socket.on('disconnect', () => {
     console.log('Node:', procid, 'Socket:', socket.id, 'disconnection')
+    socket.to(room).broadcast.emit('socket-disconnected', socket.id)
   })
 
   socket.emit('handshake', { procid })
+  socket.to(room).broadcast.emit('socket-connected', socket.id)
 })
 
 const serverInstance = shouldUseSSL ? httpsServer : httpServer

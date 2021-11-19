@@ -19,11 +19,9 @@ $ npm install pm2@latest -g
 Ensure a [Redis][redis] instance is running on `redis://127.0.0.1:6379`, then:
 
 ```bash
-# Run UI server:
-$ npm run start-ui-dev
-
 # Run socket.io server as a 4 node cluster using PM2:
 $ npm run start-dev
+
 # .. and to stream logs:
 $ pm2 logs --merge-logs
 
@@ -33,7 +31,7 @@ $ npm run stop-dev
 
 then visit:
 
-https://localhost:5010/Maths?id_user=foo which will create a socket.io client
+https://localhost:5009/Maths?id_user=foo which will create a socket.io client
 with `id_user: 'foo'` and join room `"Maths"` for example.
 
 ## API Endpoints

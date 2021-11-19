@@ -6,7 +6,6 @@
   "scripts": {
     "start-dev": "NODE_ENV=development pm2 start server/app.js -i 4",
     "stop-dev": "pm2 delete all",
-    "start-ui-dev": "NODE_ENV=development node ui/app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
