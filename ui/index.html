@@ -122,7 +122,7 @@
         <th>Name</th>
       </tr>
 
-      <template is="dom-repeat" items="[[users]]">
+      <template is="dom-repeat" items="[[users]]" sort="_sortByIdDesc">
         <tr>
           <td>[[item.id_user]]</td>
           <td>[[item.id_socket]]</td>
@@ -267,6 +267,10 @@
 
             this.set(`users.${i}.data`, result.response)
           })
+        },
+
+        _sortByIdDesc: function(a, b) {
+          return +a.id_user - +b.id_user
         }
       })
     })

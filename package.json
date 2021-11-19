@@ -4,6 +4,7 @@
   "description": "socket.io identity playground",
   "main": "server/app.js",
   "scripts": {
+    "start": "node server/app.js",
     "reset-db": "knex migrate:latest --env development && knex seed:run --env development",
     "start-dev": "NODE_ENV=development pm2 start server/app.js -i 4",
     "stop-dev": "pm2 kill",

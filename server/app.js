@@ -17,6 +17,8 @@ const bodyParser = require('body-parser')
 const socketIO = require('socket.io')
 const redis = require('./redis')
 
+// General Setups
+
 const app = express()
 const httpServer = http.createServer(app)
 const httpsServer = https.createServer({
