@@ -20,7 +20,7 @@ Ensure a [Redis][redis] instance is running on `redis://127.0.0.1:6379`, then:
 
 ```bash
 # Migrate & seed SQLite3 DB:
-$ npm run reset-db
+$ npm run reset-db-dev
 
 # Run socket.io server as a 4 node cluster using PM2 and stream logs:
 $ npm run stop-dev && npm run start-dev && pm2 logs --merge-logs
@@ -29,7 +29,7 @@ $ npm run stop-dev && npm run start-dev && pm2 logs --merge-logs
 $ npm run stop-dev
 
 # Reset database and restart cluster:
-$ npm run reset-db && npm run stop-dev && npm run start-dev && pm2 logs --merge-logs
+$ npm run reset-db-dev && npm run stop-dev && npm run start-dev && pm2 logs --merge-logs
 ```
 
 then visit:

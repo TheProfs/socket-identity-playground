@@ -5,7 +5,8 @@
   "main": "server/app.js",
   "scripts": {
     "start": "node server/app.js",
-    "reset-db": "knex migrate:latest --env development && knex seed:run --env development",
+    "reset-db-dev": "knex migrate:latest --env development && knex seed:run --env development",
+    "reset-db-staging": "knex migrate:latest --env staging && knex seed:run --env staging",
     "start-dev": "NODE_ENV=development pm2 start server/app.js -i 4",
     "stop-dev": "pm2 kill",
     "test": "echo \"Error: no test specified\" && exit 1"
