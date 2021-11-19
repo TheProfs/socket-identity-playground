@@ -76,9 +76,9 @@ When pinged:
 - `GET` request lands on a node, we'll call it the **request node**.
 - The **request node** then finds out all the `socket ids` for that room.
 - For each `id_socket`:
-  - Asks the **other nodes** if they have in their state a `socket` with that
-    `id_socket`.
-    If yes, the **other node** response with the `socket.id_user` of the
+  - Asks the **all other nodes** if they have in their state a `socket` with
+    that `id_socket`.
+    If yes, the **other node** responds with the `socket.id_user` of the
     found `socket`.
 - The **request node** responds to the `GET` request with a user list,
   each user containing a `id_socket` and an `id_user` like so:
