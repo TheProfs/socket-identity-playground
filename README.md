@@ -89,7 +89,7 @@ When pinged:
 - `GET` request lands on a node, we'll call it the **request node**.
 - The **request node** then finds out all the `socket ids` for that room.
 - For each `id_socket`:
-  - Asks the **all other nodes** if they have in their state a `socket` with
+  - Asks **all other nodes** if they have in their state a `socket` with
     that `id_socket`.
     If yes, the **other node** responds with the `socket.id_user` of the
     found `socket`.
@@ -104,16 +104,14 @@ When pinged:
   ]
 ```
 
+![GET /:room/users architecture](https://i.ibb.co/YRgbPsT/Screenshot-2021-11-19-at-12-16-34-PM.png)
+
 - The client is then responsible for hydrating the `id_user`s with the full
   user objects.
 - When a client updates his identity info, he then broadcasts an
   `identity-change` event.
 - Each participant in the room then rehydrates the user object for the `id_user`  
   that emitted the `identity-change`.
-
-
-![Architecture](https://i.ibb.co/YRgbPsT/Screenshot-2021-11-19-at-12-16-34-PM.png)
-
 
 ### Notes:
 
