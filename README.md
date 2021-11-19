@@ -118,7 +118,9 @@ When pinged:
 - We don't create additional state. Each node already has a state, the `io`
   object which keeps track of all connected `sockets` to that node.
   We simply add an additional property, `id_user` to each `socket`.
-- Communication between nodes happens via the [`customRequest` mechanism][socketio-custom-request].
+- Nodes do not actually directly communicate with each other.
+  Communication between nodes happens using the [`customRequest` mechanism][socketio-custom-request],
+  which uses [Redis Pub/Sub][redis-pubsub].
 
 ## Authors
 
@@ -130,5 +132,6 @@ The MIT License
 
 [socket.io-multiple-nodes]: https://socket.io/docs/v3/using-multiple-nodes/
 [redis]: https://redis.io/
+[redis-pubsub]: https://redis.io/topics/pubsub
 [socketio-custom-request]: https://github.com/socketio/socket.io-redis-adapter/tree/01028d03dbdc9cc05c940a2ac6bc367119165c16#redisadaptercustomrequestdataobject-fnfunction
 [heroku]: https://heroku.com
