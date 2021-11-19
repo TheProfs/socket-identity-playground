@@ -111,6 +111,10 @@ When pinged:
 - Each participant in the room then rehydrates the user object for the `id_user`  
   that emitted the `identity-change`.
 
+
+![Architecture](https://i.ibb.co/YRgbPsT/Screenshot-2021-11-19-at-12-16-34-PM.png)
+
+
 ### Notes:
 
 - We don't create additional state. Each node already has a state, the `io`
