@@ -12,6 +12,9 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 # Development Scripts
 /scratch
 
+# SQLite DB
+dev.sqlite3
+
 # Runtime data
 pids
 *.pid
