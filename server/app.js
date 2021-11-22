@@ -105,6 +105,7 @@ app.get('/:room/users', async (req, res) => {
 
     const result = []
 
+    // @REVIEW  Use throttled parallel promises here.
     for (let id_socket of clients) {
       const id_user = await getIdUserFromSocketId(id_socket)
 
