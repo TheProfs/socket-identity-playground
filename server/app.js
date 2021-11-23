@@ -95,7 +95,7 @@ const getIdUserFromSocketId = id_socket => new Promise((resolve, reject) => {
   })
 })
 
-app.get('/:room/users', async (req, res) => {
+app.get('/:room/users', (req, res) => {
   io.of('/').adapter.clients([req.params.room], async (err, clients) => {
     if (err) {
       console.error(err)
@@ -103,16 +103,15 @@ app.get('/:room/users', async (req, res) => {
       return res.status(500).send(err)
     }
 
-    const result = []
+    const results = await Promise.all(clients.map(id_socket => {
+      return getIdUserFromSocketId(id_socket).then(id_user => ({
+        id_user,
+        id_socket,
+        data: {}
+      }))
+    }))
 
-    // @REVIEW  Use throttled parallel promises here.
-    for (let id_socket of clients) {
-      const id_user = await getIdUserFromSocketId(id_socket)
-
-      result.push({ id_user, id_socket, data: {} })
-    }
-
-    res.json(result)
+    res.json(results)
   })
 })
 

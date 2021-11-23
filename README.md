@@ -16,7 +16,10 @@ $ npm install pm2@latest -g
 
 ## Run local
 
-Ensure a [Redis][redis] instance is running on `redis://127.0.0.1:6379`, then:
+Requirements before running:
+
+- A [Redis][redis] instance is running on `redis://127.0.0.1:6379`
+- You use [NodeJS][nodejs] v14+
 
 ```bash
 # Migrate & seed SQLite3 DB:
@@ -130,6 +133,7 @@ The Profs
 
 The MIT License
 
+[nodejs]: https://nodejs.org/en/
 [socket.io-multiple-nodes]: https://socket.io/docs/v3/using-multiple-nodes/
 [redis]: https://redis.io/
 [redis-pubsub]: https://redis.io/topics/pubsub
